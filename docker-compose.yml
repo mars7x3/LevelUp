@@ -1,0 +1,82 @@
+version: '2.2'
+
+services:
+  postgres:
+    image: postgres:latest
+    env_file:
+      - ./app/.env
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/pgdata
+    networks:
+      - db_network
+
+  web:
+    build: ./
+    command: gunicorn main_conf.wsgi:application --bind 0.0.0.0:8000
+    restart: always
+    volumes:
+      - static_volume:/usr/src/app/static
+      - media_volume:/usr/src/app/media
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./app/.env
+    depends_on:
+      - postgres
+    networks:
+      - app_network
+      - db_network
+
+  nginx:
+    build:
+      context: .
+      dockerfile: ./nginx.Dockerfile
+    restart: always
+    ports:
+      - "80:80"
+    volumes:
+      - static_volume:/usr/src/app/static
+      - media_volume:/usr/src/app/media
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - web
+    networks:
+      - app_network
+
+  celery:
+    build: ./
+    command: celery -A main_conf worker -B --loglevel=info
+    restart: always
+    volumes:
+      - static_volume:/usr/src/app/static
+      - media_volume:/usr/src/app/media
+    depends_on:
+      - postgres
+    networks:
+      - app_network
+      - db_network
+
+  redis:
+    image: 'redis:alpine'
+    command: redis-server --requirepass hg8529f0396193fhwbsdas
+    restart: always
+    ports:
+      - "6379:6379"
+    hostname: redis
+    volumes:
+      - redis_data:/bitnami/redis/data
+    networks:
+      - app_network
+
+volumes:
+  static_volume:
+  media_volume:
+  postgres_data:
+    driver: local
+  redis_data:
+
+networks:
+  db_network:
+  app_network:
