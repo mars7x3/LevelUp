@@ -3,6 +3,7 @@ from rest_framework import viewsets, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from api.permissions import IsDirector
 from api.serializers.director import ClientSerializer, ClientCreateSerializer, ClientUpdateSerializer, \
     MyUserCreateSerializer, MyUserUpdateSerializer, StaffSerializer, StaffCreateSerializer, StaffUpdateSerializer
 from db.enums import UserStatus
@@ -10,7 +11,7 @@ from db.models import ClientProfile, MyUser, StaffProfile
 
 
 class ClientModelViewSet(viewsets.ModelViewSet):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsDirector]
     queryset = ClientProfile.objects.all()
 
     def get_serializer_class(self):
@@ -103,7 +104,7 @@ class ClientModelViewSet(viewsets.ModelViewSet):
 
 
 class StaffModelViewSet(viewsets.ModelViewSet):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsDirector]
     queryset = StaffProfile.objects.all()
 
     def get_serializer_class(self):
@@ -193,3 +194,5 @@ class StaffModelViewSet(viewsets.ModelViewSet):
         user.is_active = False
         user.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+

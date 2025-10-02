@@ -62,3 +62,5 @@ class StaffUpdateSerializer(StaffCreateSerializer):
     password = serializers.CharField(write_only=True, required=False)
     fullname = serializers.CharField(required=False)
     role = serializers.IntegerField(required=False)
+
+
