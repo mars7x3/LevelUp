@@ -12,3 +12,12 @@ class IsReceiver(BasePermission):
     def has_permission(self, request, view):
         return request.user.staff_profile.role == StaffRole.RECEIVER
 
+
+class IsOTK(BasePermission):
+    def has_permission(self, request, view):
+        return request.user.staff_profile.role == StaffRole.OTK
+
+
+class IsPacker(BasePermission):
+    def has_permission(self, request, view):
+        return request.user.staff_profile.role == StaffRole.PACKER

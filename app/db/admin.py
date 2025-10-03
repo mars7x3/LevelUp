@@ -8,4 +8,6 @@ admin.site.register(StaffProfile)
 admin.site.register(Order)
 admin.site.register(Product)
 admin.site.register(ProductCode)
+admin.site.register(Work)
+admin.site.register(WorkImage)
 

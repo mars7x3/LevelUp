@@ -7,7 +7,7 @@ from rest_framework.views import APIView
 from api.permissions import IsReceiver
 from api.serializers.receiver import OrderSerializer, CreateProductSerializer
 from db.enums import OrderStatus, CodeType, ProductStatus
-from db.models import Order, Product, ProductCode
+from db.models import Order, Product, ProductCode, Work
 
 
 class OrderListView(ListAPIView):
@@ -36,11 +36,18 @@ class ReceptionView(APIView):
             internal_code=validated["internal_code"],
             status=ProductStatus.RECEIVER
         )
+
         ProductCode.objects.create(
             product=product,
             file=validated["file"],
             code=validated["internal_code"],
             type=CodeType.INTERNAL
+        )
+
+        Work.objects.create(
+            product=product,
+            staff=request.user.staff_profile,
+            status=ProductStatus.RECEIVER,
         )
 
         return Response('OK!')

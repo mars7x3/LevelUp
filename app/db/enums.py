@@ -21,7 +21,8 @@ class ProductStatus(models.IntegerChoices):
     OTK = 2, 'ОТК'
     PACKER = 3, 'УПАКОВЩИК'
     MARKER = 4, 'МАРКЕРОВЩИК'
-    CONTROLLER = 5, 'ГРУППИРОЩИК'
+    CONTROLLER = 5, 'ГРУППИРОВЩИК'
+    DEFECT = 6, 'БРАК'
 
 
 class CodeType(models.IntegerChoices):

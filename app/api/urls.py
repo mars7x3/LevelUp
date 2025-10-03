@@ -7,6 +7,7 @@ from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from api.views.director import ClientModelViewSet, StaffModelViewSet, OrderModelViewSet, OrderReadViewSet
+from api.views.work import OTKWorkView, PackerWorkView
 from api.views.receiver import OrderListView, ReceptionView
 
 router = DefaultRouter()
@@ -33,6 +34,11 @@ urlpatterns = [
 
         path('receiver/order/list/', OrderListView.as_view()),
         path('receiver/reception/', ReceptionView.as_view()),
+
+        path('otk/work/', OTKWorkView.as_view()),
+        path('packer/work/', PackerWorkView.as_view()),
+
+
 
 
         path('', include(router.urls)),
