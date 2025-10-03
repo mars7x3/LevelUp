@@ -76,16 +76,24 @@ class Order(BaseModel):
     )
 
 
-class OrderDetail(BaseModel):
+class OrderProduct(models.Model):
     order = models.ForeignKey(
         'Order',
+        on_delete=models.CASCADE,
+        related_name='order_products'
+    )
+    product_title = models.CharField(max_length=100)
+
+
+class ProductDetail(BaseModel):
+    order_product = models.ForeignKey(
+        'OrderProduct',
         on_delete=models.CASCADE,
         related_name='details'
     )
     color = models.CharField(max_length=100)
     size = models.CharField(max_length=100)
     amount = models.PositiveIntegerField()
-    product_title = models.CharField(max_length=100)
 
 
 class Product(BaseModel):

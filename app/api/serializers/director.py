@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from api.serializers.get_or_none import serialize_instance
-from db.models import ClientProfile, MyUser, StaffProfile, Order, OrderDetail
+from db.models import ClientProfile, MyUser, StaffProfile, Order, OrderProduct, ProductDetail
 
 
 class MyUserSerializer(serializers.ModelSerializer):
@@ -89,20 +89,24 @@ class StaffUpdateSerializer(StaffCreateSerializer):
     role = serializers.IntegerField(required=False)
 
 
-class OrderDetailSerializer(serializers.Serializer):
-    color = serializers.CharField()
-    size = serializers.CharField()
-    amount = serializers.IntegerField()
-    product_title = serializers.CharField()
-
-
 class OrderClientSerializer(serializers.Serializer):
     id = serializers.CharField()
     fullname = serializers.CharField()
 
 
+class OrderDetailAmountSerializer(serializers.Serializer):
+    color = serializers.CharField()
+    size = serializers.CharField()
+    amount = serializers.IntegerField()
+
+
+class OrderProductsSerializer(serializers.Serializer):
+    product_title = serializers.CharField()
+    details = OrderDetailAmountSerializer(many=True)
+
+
 class OrderSerializer(serializers.ModelSerializer):
-    details = OrderDetailSerializer(many=True)
+    order_products = OrderProductsSerializer(many=True)
     client_info = serializers.SerializerMethodField()
 
     class Meta:
@@ -115,52 +119,58 @@ class OrderSerializer(serializers.ModelSerializer):
             ["id", "fullname"]
         )
 
+
 class OrderCreateUpdateSerializer(serializers.ModelSerializer):
-    details = OrderDetailSerializer(many=True, required=False)
+    order_products = OrderProductsSerializer(many=True, required=False)
 
     class Meta:
         model = Order
         fields = '__all__'
 
     def create(self, validated_data):
-        details = validated_data.pop('details')
+        products = validated_data.pop('order_products')
         instance = Order.objects.create(**validated_data)
 
-        if details:
+        if products:
             create_data = []
-            for d in details:
-                create_data.append(
-                    OrderDetail(
-                        order=instance,
-                        color=d['color'],
-                        size=d['size'],
-                        amount=d['amount'],
-                        product_title=d['product_title']
+            for p in products:
+                product = OrderProduct.objects.create(order=instance, product_title=p['product_title'])
+                details = p['details']
+                for d in details:
+                    create_data.append(
+                        ProductDetail(
+                            order_product=product,
+                            color=d['color'],
+                            size=d['size'],
+                            amount=d['amount'],
+                        )
                     )
-                )
 
-            OrderDetail.objects.bulk_create(create_data)
+            ProductDetail.objects.bulk_create(create_data)
 
         return instance
 
     def update(self, instance, validated_data):
-        details = validated_data.pop('details')
-        instance = super().update(instance, validated_data)
+        products = validated_data.pop('order_products')
+        instance = Order.objects.create(**validated_data)
 
-        if details:
+        if products:
+            instance.order_products.all().delete()
             create_data = []
-            for d in details:
-                create_data.append(
-                    OrderDetail(
-                        order=instance,
-                        color=d['color'],
-                        size=d['size'],
-                        amount=d['amount'],
-                        product_title=d['product_title']
+            for p in products:
+                product = OrderProduct.objects.create(order=instance, product_title=p['product_title'])
+                details = p['details']
+                for d in details:
+                    create_data.append(
+                        ProductDetail(
+                            order_product=product,
+                            color=d['color'],
+                            size=d['size'],
+                            amount=d['amount'],
+                        )
                     )
-                )
-            instance.details.all().delete()
-            OrderDetail.objects.bulk_create(create_data)
+
+            ProductDetail.objects.bulk_create(create_data)
 
         return instance
 
