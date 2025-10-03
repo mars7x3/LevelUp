@@ -8,3 +8,7 @@ class IsDirector(BasePermission):
         return request.user.staff_profile.role == StaffRole.DIRECTOR
 
 
+class IsReceiver(BasePermission):
+    def has_permission(self, request, view):
+        return request.user.staff_profile.role == StaffRole.RECEIVER
+

@@ -210,5 +210,5 @@ class OrderModelViewSet(
 
 class OrderReadViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsAuthenticated, IsDirector]
-    queryset = Order.objects.select_related('client')
+    queryset = Order.objects.select_related('client').prefetch_related('order_products__details')
     serializer_class = OrderSerializer
