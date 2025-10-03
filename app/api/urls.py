@@ -6,11 +6,15 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, Sp
 from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
-from api.views.director import ClientModelViewSet, StaffModelViewSet
+from api.views.director import ClientModelViewSet, StaffModelViewSet, OrderModelViewSet, OrderReadViewSet
 
 router = DefaultRouter()
 router.register('director/client/crud', ClientModelViewSet)
 router.register('director/staff/crud', StaffModelViewSet)
+router.register('director/order/crud', OrderModelViewSet)
+router.register('director/order/read', OrderReadViewSet)
+
+
 
 
 urlpatterns = [

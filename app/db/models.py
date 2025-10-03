@@ -3,7 +3,7 @@ import uuid
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
-from db.enums import StaffRole, UserStatus, ProductStatus, CodeType
+from db.enums import StaffRole, UserStatus, ProductStatus, CodeType, OrderStatus
 
 
 class BaseModel(models.Model):
@@ -68,6 +68,12 @@ class Order(BaseModel):
         on_delete=models.CASCADE,
         related_name='orders'
     )
+    status = models.IntegerField(
+        choices=OrderStatus.choices,
+        default=OrderStatus.NEW,
+        blank=True,
+        null=True
+    )
 
 
 class OrderDetail(BaseModel):
@@ -78,7 +84,7 @@ class OrderDetail(BaseModel):
     )
     color = models.CharField(max_length=100)
     size = models.CharField(max_length=100)
-    amount = models.CharField(max_length=100)
+    amount = models.PositiveIntegerField()
     product_title = models.CharField(max_length=100)
 
 

@@ -1,13 +1,16 @@
 from drf_spectacular.utils import extend_schema
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, mixins
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.viewsets import GenericViewSet
 
 from api.permissions import IsDirector
 from api.serializers.director import ClientSerializer, ClientCreateSerializer, ClientUpdateSerializer, \
-    MyUserCreateSerializer, MyUserUpdateSerializer, StaffSerializer, StaffCreateSerializer, StaffUpdateSerializer
+    MyUserCreateSerializer, MyUserUpdateSerializer, StaffSerializer, StaffCreateSerializer, StaffUpdateSerializer, \
+    OrderSerializer, OrderCreateUpdateSerializer
+
 from db.enums import UserStatus
-from db.models import ClientProfile, MyUser, StaffProfile
+from db.models import ClientProfile, MyUser, StaffProfile, Order
 
 
 class ClientModelViewSet(viewsets.ModelViewSet):
@@ -196,3 +199,16 @@ class StaffModelViewSet(viewsets.ModelViewSet):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+class OrderModelViewSet(
+    mixins.CreateModelMixin,
+    mixins.UpdateModelMixin,
+    GenericViewSet):
+    permission_classes = [IsAuthenticated, IsDirector]
+    queryset = Order.objects.all()
+    serializer_class = OrderCreateUpdateSerializer
+
+
+class OrderReadViewSet(viewsets.ReadOnlyModelViewSet):
+    permission_classes = [IsAuthenticated, IsDirector]
+    queryset = Order.objects.select_related('client')
+    serializer_class = OrderSerializer

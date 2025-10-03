@@ -28,3 +28,9 @@ class CodeType(models.IntegerChoices):
     INTERNAL = 1, 'ВНУТРЕННИЙ'
     HS = 2, 'ЧЕСТНЫЙ ЗНАК'
     WB = 3, 'WILDBERRIES'
+
+
+class OrderStatus(models.IntegerChoices):
+    NEW = 1, 'НОВЫЙ'
+    PROGRES = 2, 'В ПРОЦЕССЕ'
+    DONE = 3, 'ГОТОВО'
