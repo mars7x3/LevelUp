@@ -128,7 +128,7 @@ class OrderCreateUpdateSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def create(self, validated_data):
-        products = validated_data.pop('order_products')
+        products = validated_data.pop("order_products", [])
         instance = Order.objects.create(**validated_data)
 
         if products:
@@ -151,7 +151,7 @@ class OrderCreateUpdateSerializer(serializers.ModelSerializer):
         return instance
 
     def update(self, instance, validated_data):
-        products = validated_data.pop('order_products')
+        products = validated_data.pop("order_products", [])
         instance = Order.objects.create(**validated_data)
 
         if products:
