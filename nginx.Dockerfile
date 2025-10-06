@@ -10,7 +10,7 @@ RUN npm install --legacy-peer-deps
 
 COPY frontend .
 
-RUN npm run build
+RUN tsc --noUnusedLocals false && vite build
 
 FROM nginx:alpine
 
