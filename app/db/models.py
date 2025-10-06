@@ -3,7 +3,7 @@ import uuid
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
-from db.enums import StaffRole, UserStatus, ProductStatus, CodeType, OrderStatus
+from db.enums import StaffRole, UserStatus, ProductStatus, CodeType, OrderStatus, StatementType
 
 
 class BaseModel(models.Model):
@@ -126,6 +126,23 @@ class ProductCode(BaseModel):
         blank=True,
         null=True
     )
+
+
+class Statement(BaseModel):
+    product = models.ForeignKey(
+        'Product',
+        on_delete=models.CASCADE,
+        related_name='statements'
+    )
+    staff = models.ForeignKey(
+        'StaffProfile',
+        on_delete=models.CASCADE,
+        related_name='statements',
+        blank=True,
+        null=True
+    )
+    type = models.IntegerField(choices=StatementType.choices)
+    is_moderated = models.BooleanField(default=False)
 
 
 class Work(BaseModel):

@@ -6,8 +6,9 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, Sp
 from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
-from api.views.director import ClientModelViewSet, StaffModelViewSet, OrderModelViewSet, OrderReadViewSet
-from api.views.work import OTKWorkView, PackerWorkView, MarkerImagesView, MarkerWorkView
+from api.views.director import ClientModelViewSet, StaffModelViewSet, OrderModelViewSet, OrderReadViewSet, \
+    StatementListView, UpdateStatementView
+from api.views.work import OTKWorkView, PackerWorkView, MarkerImagesView, MarkerWorkView, CreateStatementView
 from api.views.receiver import OrderListView, ReceptionView
 
 router = DefaultRouter()
@@ -39,6 +40,13 @@ urlpatterns = [
         path('packer/work/', PackerWorkView.as_view()),
         path('marker/work/', MarkerWorkView.as_view()),
         path('marker/work/get/images/', MarkerImagesView.as_view()),
+        path('marker/create/statement/', CreateStatementView.as_view()),
+
+        path('director/statement/list/', StatementListView.as_view()),
+        path('director/statement/update/', UpdateStatementView.as_view()),
+
+
+
 
         path('', include(router.urls)),
     ])),

@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from api.serializers.get_or_none import serialize_instance
-from db.models import ClientProfile, MyUser, StaffProfile, Order, OrderProduct, ProductDetail
+from db.models import ClientProfile, MyUser, StaffProfile, Order, OrderProduct, ProductDetail, Statement
 
 
 class MyUserSerializer(serializers.ModelSerializer):
@@ -175,9 +175,31 @@ class OrderCreateUpdateSerializer(serializers.ModelSerializer):
         return instance
 
 
+class StatementProductSerializer(serializers.Serializer):
+    title = serializers.CharField()
 
 
+class StatementStaffSerializer(serializers.Serializer):
+    fullname = serializers.CharField()
 
+
+class StatementSerializer(serializers.ModelSerializer):
+    product = StatementProductSerializer(read_only=True)
+    staff = StatementStaffSerializer(read_only=True)
+
+    class Meta:
+        model = Statement
+        fields = [
+            'id',
+            'product',
+            'staff',
+            'created_at'
+        ]
+
+
+class StatementUpdateSerializer(serializers.Serializer):
+    statement_id = serializers.CharField()
+    is_success = serializers.BooleanField()
 
 
 

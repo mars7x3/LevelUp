@@ -10,4 +10,5 @@ admin.site.register(Product)
 admin.site.register(ProductCode)
 admin.site.register(Work)
 admin.site.register(WorkImage)
+admin.site.register(Statement)
 

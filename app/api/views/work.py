@@ -5,10 +5,10 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from api.permissions import IsOTK, IsPacker
+from api.permissions import IsOTK, IsPacker, IsMarker
 from api.serializers.work import OTKWorkSerializer, PackerWorkSerializer, MarkerFilesSerializer, MarkerWorkSerializer
-from db.enums import ProductStatus, CodeType
-from db.models import Product, Work, WorkImage
+from db.enums import ProductStatus, CodeType, StatementType
+from db.models import Product, Work, WorkImage, Statement
 
 
 class OTKWorkView(APIView):
@@ -59,7 +59,7 @@ class OTKWorkView(APIView):
 
 
 class PackerWorkView(APIView):
-    permission_classes = [IsAuthenticated, ]
+    permission_classes = [IsAuthenticated, IsPacker]
 
     @extend_schema(request=PackerWorkSerializer())
     def post(self, request):
@@ -95,7 +95,7 @@ class PackerWorkView(APIView):
         )
 
 class MarkerImagesView(APIView):
-    permission_classes = [IsAuthenticated, ]
+    permission_classes = [IsAuthenticated, IsMarker]
 
     @extend_schema(
         responses=MarkerFilesSerializer(many=True)
@@ -110,7 +110,7 @@ class MarkerImagesView(APIView):
                 ProductStatus.RECEIVER,
                 ProductStatus.PACKER
             ]:
-                codes = product.codes.all()
+                codes = product.codes.exclude(type=CodeType.INTERNAL)
 
                 serializer = MarkerFilesSerializer(
                     codes,
@@ -128,7 +128,7 @@ class MarkerImagesView(APIView):
         )
 
 class MarkerWorkView(APIView):
-    permission_classes = [IsAuthenticated, ]
+    permission_classes = [IsAuthenticated, IsMarker]
 
     @extend_schema(request=MarkerWorkSerializer())
     def post(self, request):
@@ -159,6 +159,37 @@ class MarkerWorkView(APIView):
             return Response(
                 'Повторно провести не получится!',
                 status=status.HTTP_400_BAD_REQUEST
+            )
+        return Response(
+            'Товар не сущестует!',
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+
+class CreateStatementView(APIView):
+    permission_classes = [IsAuthenticated, IsMarker]
+
+    @extend_schema(request=MarkerWorkSerializer())
+    def post(self, request):
+        serializer = MarkerWorkSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        validated = serializer.validated_data
+
+        product = Product.objects.filter(internal_code=validated['internal_code']).first()
+        if product:
+            statement, created = Statement.objects.get_or_create(
+                product=product,
+                type=StatementType.CODE,
+                is_moderated=False,
+                staff=request.user.staff_profile
+            )
+            if created:
+                return Response('OK!')
+
+            return Response(
+            'Заявка уже сущестует!',
+            status=status.HTTP_400_BAD_REQUEST
             )
         return Response(
             'Товар не сущестует!',

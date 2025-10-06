@@ -1,16 +1,18 @@
 from drf_spectacular.utils import extend_schema
 from rest_framework import viewsets, status, mixins
+from rest_framework.generics import ListAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet
 
 from api.permissions import IsDirector
 from api.serializers.director import ClientSerializer, ClientCreateSerializer, ClientUpdateSerializer, \
     MyUserCreateSerializer, MyUserUpdateSerializer, StaffSerializer, StaffCreateSerializer, StaffUpdateSerializer, \
-    OrderSerializer, OrderCreateUpdateSerializer
+    OrderSerializer, OrderCreateUpdateSerializer, StatementSerializer, StatementUpdateSerializer
 
-from db.enums import UserStatus
-from db.models import ClientProfile, MyUser, StaffProfile, Order
+from db.enums import UserStatus, StatementType, ProductStatus
+from db.models import ClientProfile, MyUser, StaffProfile, Order, Statement, Product, Work
 
 
 class ClientModelViewSet(viewsets.ModelViewSet):
@@ -202,7 +204,8 @@ class StaffModelViewSet(viewsets.ModelViewSet):
 class OrderModelViewSet(
     mixins.CreateModelMixin,
     mixins.UpdateModelMixin,
-    GenericViewSet):
+    GenericViewSet
+):
     permission_classes = [IsAuthenticated, IsDirector]
     queryset = Order.objects.all()
     serializer_class = OrderCreateUpdateSerializer
@@ -212,3 +215,51 @@ class OrderReadViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsAuthenticated, IsDirector]
     queryset = Order.objects.select_related('client').prefetch_related('order_products__details')
     serializer_class = OrderSerializer
+
+
+class StatementListView(ListAPIView):
+    permission_classes = [IsAuthenticated, ]
+    queryset = Statement.objects.filter(
+        type=StatementType.CODE,
+        is_moderated=False
+    ).select_related('product', 'staff')
+    serializer_class = StatementSerializer
+
+
+class UpdateStatementView(APIView):
+    permission_classes = [IsAuthenticated, IsDirector]
+
+    @extend_schema(request=StatementUpdateSerializer())
+    def post(self, request):
+        serializer = StatementUpdateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        validated = serializer.validated_data
+
+        statement = Statement.objects.filter(
+            id=validated['statement_id'],
+            is_moderated=False
+        ).first()
+
+        if statement:
+            if validated.get('is_success'):
+                product = statement.product
+
+                Work.objects.filter(
+                    product=product,
+                    status=ProductStatus.MARKER
+
+                ).delete()
+
+                product.status = ProductStatus.PACKER
+                product.save()
+
+            statement.is_moderated = True
+            statement.save()
+
+            return Response('OK!')
+
+        return Response(
+            'Заявка уже прошла модерацию!',
+            status=status.HTTP_400_BAD_REQUEST
+        )

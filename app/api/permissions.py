@@ -21,3 +21,8 @@ class IsOTK(BasePermission):
 class IsPacker(BasePermission):
     def has_permission(self, request, view):
         return request.user.staff_profile.role == StaffRole.PACKER
+
+
+class IsMarker(BasePermission):
+    def has_permission(self, request, view):
+        return request.user.staff_profile.role == StaffRole.MARKER

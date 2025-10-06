@@ -31,6 +31,10 @@ class CodeType(models.IntegerChoices):
     WB = 3, 'WILDBERRIES'
 
 
+class StatementType(models.IntegerChoices):
+    CODE = 1, 'ЗАЯВКА НА ПОВТОРНУЮ ПЕЧАТЬ КОДА'
+
+
 class OrderStatus(models.IntegerChoices):
     NEW = 1, 'НОВЫЙ'
     PROGRES = 2, 'В ПРОЦЕССЕ'
