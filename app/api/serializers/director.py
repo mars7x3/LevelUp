@@ -152,7 +152,10 @@ class OrderCreateUpdateSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         products = validated_data.pop("order_products", [])
-        instance = Order.objects.create(**validated_data)
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
 
         if products:
             instance.order_products.all().delete()
