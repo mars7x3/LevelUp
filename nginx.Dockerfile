@@ -5,6 +5,8 @@ WORKDIR /frontend
 COPY ./frontend/package*.json ./
 RUN npm install --legacy-peer-deps
 
+RUN npm install react-is --legacy-peer-deps
+
 COPY frontend .
 
 RUN npm run build
