@@ -1,3 +1,4 @@
+from django.db.models import Count
 from drf_spectacular.utils import extend_schema
 from rest_framework import viewsets, status, mixins
 from rest_framework.generics import ListAPIView
@@ -263,3 +264,111 @@ class UpdateStatementView(APIView):
             'Заявка уже прошла модерацию!',
             status=status.HTTP_400_BAD_REQUEST
         )
+
+
+class OrderDetailView(APIView):
+    def get(self, request):
+        order_id = request.query_params.get('order_id')
+        order = (
+            Order.objects
+            .filter(id=order_id)
+            .prefetch_related(
+                'order_products__details',
+                'products__works__staff'
+            )
+            .first()
+        )
+
+        if not order:
+            return Response({'error': 'Order not found'}, status=404)
+
+        # === 1. СВОДКА ПО ВСЕМ ПРОДУКТАМ ===
+        summary = dict(
+            order.products
+            .values('status')
+            .annotate(total=Count('id'))
+            .values_list('status', 'total')
+        )
+
+        summary = {
+            status.name: summary.get(status.value, 0)
+            for status in ProductStatus
+        }
+
+        # === 2. Детализация по каждому OrderProduct ===
+        info = []
+
+        for op in order.order_products.all():
+            planned_total = sum(d.amount for d in op.details.all())
+
+            # Все продукты для этого order_product (по совпадению названия)
+            related_products = order.products.filter(title=op.product_title)
+
+            # Факт по статусу RECEIVER
+            fact_total = related_products.filter(
+                works__status=ProductStatus.RECEIVER
+            ).distinct().count()
+
+            details_list = []
+            for d in op.details.all():
+                # fact_amount: сколько изделий этого цвета и размера прошли RECEIVER
+                fact_amount = related_products.filter(
+                    color=d.color,
+                    size=d.size,
+                    works__status=ProductStatus.RECEIVER
+                ).distinct().count()
+
+                # группируем работы по статусу и сотрудникам
+                works_data = []
+                works_qs = (
+                    related_products
+                    .filter(color=d.color, size=d.size)
+                    .values(
+                        'works__status',
+                        'works__staff__fullname'
+                    )
+                    .annotate(amount=Count('works__id'))
+                )
+
+                # группировка по статусу
+                status_groups = {}
+                for w in works_qs:
+                    st = w['works__status']
+                    status_groups.setdefault(st, {})
+                    status_groups[st][w['works__staff__fullname']] = w['amount']
+
+                for st, staffs in status_groups.items():
+                    works_data.append({
+                        'status': st,
+                        'amount': sum(staffs.values()),
+                        'staffs': [
+                            {'fullname': name, 'amount': cnt}
+                            for name, cnt in staffs.items()
+                        ]
+                    })
+
+                details_list.append({
+                    'color': d.color,
+                    'size': d.size,
+                    'planned_amount': d.amount,
+                    'fact_amount': fact_amount,
+                    'works': works_data
+                })
+
+            info.append({
+                'product_title': op.product_title,
+                'planned_total': planned_total,
+                'fact_total': fact_total,
+                'details': details_list
+            })
+
+        # === 3. Формируем итог ===
+        result = {
+            'summary': summary,
+            'info': info
+        }
+
+        return Response(result)
+
+
+
