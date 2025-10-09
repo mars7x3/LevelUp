@@ -12,6 +12,6 @@ drf-spectacular
 gunicorn
 setuptools
 django-nested-admin
-
+PyMuPDF
 
 
