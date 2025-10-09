@@ -1,14 +1,11 @@
 import io
-import re
 
-import pytesseract
 from PIL import Image
 from django.core.files.base import ContentFile
 from django.db.models import Count
 from drf_spectacular.utils import extend_schema
-from pdf2image import convert_from_bytes
 from rest_framework import viewsets, status, mixins
-from rest_framework.generics import ListAPIView, get_object_or_404
+from rest_framework.generics import ListAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
