@@ -7,7 +7,7 @@ from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from api.views.director import ClientModelViewSet, StaffModelViewSet, OrderModelViewSet, OrderReadViewSet, \
-    StatementListView, UpdateStatementView, OrderDetailView
+    StatementListView, UpdateStatementView, OrderDetailView, PDFHSCodeView, PDFExtractView
 from api.views.work import OTKWorkView, PackerWorkView, MarkerImagesView, MarkerWorkView, CreateStatementView
 from api.views.receiver import OrderListView, ReceptionView
 
@@ -45,7 +45,8 @@ urlpatterns = [
         path('director/statement/list/', StatementListView.as_view()),
         path('director/statement/update/', UpdateStatementView.as_view()),
         path('director/order/', OrderDetailView.as_view()),
-
+        path('director/pdf/hs-code/', PDFHSCodeView.as_view()),
+        path('director/pdf/wb-code/', PDFExtractView.as_view()),
 
 
 

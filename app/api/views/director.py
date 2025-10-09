@@ -1,19 +1,27 @@
+import io
+import re
+
+import pytesseract
+from PIL import Image
+from django.core.files.base import ContentFile
 from django.db.models import Count
 from drf_spectacular.utils import extend_schema
+from pdf2image import convert_from_bytes
 from rest_framework import viewsets, status, mixins
-from rest_framework.generics import ListAPIView
+from rest_framework.generics import ListAPIView, get_object_or_404
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet
+import fitz
 
 from api.permissions import IsDirector
 from api.serializers.director import ClientSerializer, ClientCreateSerializer, ClientUpdateSerializer, \
     MyUserCreateSerializer, MyUserUpdateSerializer, StaffSerializer, StaffCreateSerializer, StaffUpdateSerializer, \
     OrderSerializer, OrderCreateUpdateSerializer, StatementSerializer, StatementUpdateSerializer
 
-from db.enums import UserStatus, StatementType, ProductStatus
-from db.models import ClientProfile, MyUser, StaffProfile, Order, Statement, Product, Work
+from db.enums import UserStatus, StatementType, ProductStatus, CodeType
+from db.models import ClientProfile, MyUser, StaffProfile, Order, Statement, Product, Work, ProductCode
 
 
 class ClientModelViewSet(viewsets.ModelViewSet):
@@ -371,4 +379,123 @@ class OrderDetailView(APIView):
         return Response(result)
 
 
+class PDFHSCodeView(APIView):
+    permission_classes = [IsAuthenticated, IsDirector]
 
+    def post(self, request, *args, **kwargs):
+        file = request.FILES.get("file")
+        if not file:
+            return Response({"error": "Файл не найден"}, status=400)
+        if file.content_type != "application/pdf":
+            return Response({"error": "Только PDF допустим"}, status=400)
+
+        order_id = request.data.get('order_id')
+        title = request.data.get('product_title')
+        color = request.data.get('color')
+        size = request.data.get('size')
+
+        pdf_bytes = file.read()
+        pdf_doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+
+        products = Product.objects.filter(
+            order_id=order_id,
+            title=title,
+            color=color,
+            size=size
+        ).prefetch_related('codes')
+
+        create_data = []
+
+        for index, product in enumerate(products, start=0):
+            page = pdf_doc[index]
+            width, height = page.rect.width, page.rect.height
+            clip = fitz.Rect(0, 4/5*height, width/2, height)
+            raw_text = page.get_text("text", clip=clip)
+            code = "".join([line.strip() for line in raw_text.split("\n") if line.strip()])
+
+            pix = page.get_pixmap(dpi=300)  # без clip, вся страница
+            img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+            buf = io.BytesIO()
+            img.save(buf, format="PNG")
+            buf.seek(0)
+            django_file = ContentFile(buf.read(), name=f"{title}-{size}-{color}.png")
+
+            product.codes.filter(type=CodeType.HS).delete()
+
+            create_data.append(
+                ProductCode(
+                    product=product,
+                    file=django_file,
+                    code=code,
+                    type=CodeType.HS
+                )
+            )
+
+        ProductCode.objects.bulk_create(create_data)
+
+        return Response('ok!')
+
+
+class PDFExtractView(APIView):
+
+    def post(self, request, *args, **kwargs):
+        file = request.FILES.get("file")
+        if not file:
+            return Response({"error": "Файл не найден"}, status=400)
+        if file.content_type != "application/pdf":
+            return Response({"error": "Только PDF допустим"}, status=400)
+
+        order_id = request.data.get('order_id')
+        title = request.data.get('product_title')
+
+        pdf_bytes = file.read()
+        pdf_doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+        create_data = []
+
+        for page_num, page in enumerate(pdf_doc, start=1):
+            text = page.get_text("text")
+            lines = [line.strip() for line in text.split("\n") if line.strip()]
+
+            size_index = 6
+            code_start_index = 7
+            color_index = 9
+
+            size = lines[size_index] if len(lines) > size_index else ""
+            code_lines = lines[code_start_index:code_start_index + 2] if len(lines) > code_start_index + 1 else []
+            code = "".join(code_lines).replace(" ", "")
+            color = lines[color_index] if len(lines) > color_index else ""
+
+            pix = page.get_pixmap(dpi=300)  # без clip, вся страница
+            img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+            buf = io.BytesIO()
+            img.save(buf, format="PNG")
+            buf.seek(0)
+            django_file = ContentFile(buf.read(), name=f"{title}-{size}-{color}.png")
+            products = Product.objects.filter(
+                order_id=order_id,
+                title=title,
+                size=size,
+                color=color
+            )
+
+            for product in products:
+                ProductCode.objects.filter(
+                    product__order_id=order_id,
+                    product__title=title,
+                    type=CodeType.WB,
+                    product__size=size,
+                    product__color=color
+                ).delete()
+
+                create_data.append(
+                    ProductCode(
+                        product=product,
+                        code=code,
+                        type=CodeType.WB,
+                        file=django_file
+                    )
+                )
+
+        ProductCode.objects.bulk_create(create_data)
+
+        return Response({"ok!"})

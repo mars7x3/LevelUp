@@ -127,6 +127,11 @@ class ProductCode(BaseModel):
         null=True
     )
 
+    def delete(self, *args, **kwargs):
+        if self.file:
+            self.file.delete(save=False)
+        super().delete(*args, **kwargs)
+
 
 class Statement(BaseModel):
     product = models.ForeignKey(
