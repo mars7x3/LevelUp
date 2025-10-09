@@ -258,6 +258,7 @@ class UpdateStatementView(APIView):
                 ).delete()
 
                 product.status = ProductStatus.PACKER
+                product.internal_code = product.old_internal_code
                 product.save()
 
             statement.is_moderated = True

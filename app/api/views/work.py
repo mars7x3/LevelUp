@@ -145,6 +145,7 @@ class MarkerWorkView(APIView):
             ]:
                 hs = product.codes.filter(type=CodeType.HS).first()
                 product.status = ProductStatus.MARKER
+                product.old_internal_code = product.internal_code
                 product.internal_code = hs.code if hs else product.internal_code
                 product.save()
 

@@ -18,10 +18,6 @@ router.register('director/order/crud', OrderModelViewSet)
 router.register('director/order/read', OrderReadViewSet)
 
 
-
-
-
-
 urlpatterns = [
     path('admin/', admin.site.urls),
 

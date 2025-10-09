@@ -106,6 +106,11 @@ class Product(BaseModel):
     color = models.CharField(max_length=100)
     size = models.CharField(max_length=100)
     internal_code = models.CharField(max_length=200)
+    old_internal_code = models.CharField(
+        max_length=200,
+        blank=True,
+        null=True
+    )
     status = models.IntegerField(
         choices=ProductStatus.choices,
         blank=True,
