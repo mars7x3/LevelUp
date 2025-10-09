@@ -12,4 +12,11 @@ drf-spectacular
 gunicorn
 setuptools
 
+# Зависимости для работы с PDF и QR кодами
+pdf2image
+pyzbar
+opencv-python
+pyzxing
+zbar-py
+
 
